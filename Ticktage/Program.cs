@@ -1,4 +1,6 @@
-﻿using OpenQA.Selenium.Chrome;
+﻿using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Firefox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +12,16 @@ namespace Ticktage
 {
     class Program
     {
-        static ChromeDriver driver;
+        //static ChromeDriver driver;
+        static FirefoxDriver driver;
         static System.Media.SoundPlayer player;
 
         static void Main(string[] args)
         {
+            Console.WriteLine("");
+            Console.WriteLine("** Ticktage/Scada Chlef V1.0 **");
+            Console.WriteLine("");
+
             var serverPath = System.IO.Path.GetFullPath(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
             try
             {
@@ -28,21 +35,50 @@ namespace Ticktage
             catch
             {
             }
+            var op = new FirefoxOptions
+            {
+                AcceptInsecureCertificates = true
+            };
 
-            driver = new ChromeDriver(serverPath);
+            //driver = new ChromeDriver(serverPath);
+            driver = new FirefoxDriver(serverPath, op);
+            driver.Manage().Window.Maximize();
+            driver.Navigate().GoToUrl("https://support-cc.sdc.dz/");
 
-            driver.Navigate().GoToUrl("google.com");
-
-            var task1 = Task.Factory.StartNew(() => {
+            var task1 = Task.Factory.StartNew(() =>
+            {
                 var alarm = false;
+                bool found = false;
                 while (true)
                 {
                     try
                     {
-                        //
-                        var check = driver.FindElementByXPath("//*[@id='header']/div[1]/a[2]");
-                        //
-                        if (true)
+                        try
+                        {
+                            //
+                            found = false;
+
+                            var array = driver.FindElements(By.XPath("//table[@class='tab_cadrehov']/tbody/tr"));
+
+                            foreach (var tr in array)
+                            {
+                                var iClass = tr.FindElement(By.XPath("./td[4]/i")).GetAttribute("title");
+                                if (iClass.Trim().Equals("Attribué"))
+                                {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            //
+                        }
+                        catch (WebDriverException e)
+                        {
+                            found = false;
+                            alarm = false;
+                            //Environment.Exit(0);
+                        }
+
+                        if (found)
                         {
                             if (!alarm)
                             {
@@ -54,7 +90,6 @@ namespace Ticktage
                         {
                             alarm = false;
                         }
-
                     }
                     catch
                     {
