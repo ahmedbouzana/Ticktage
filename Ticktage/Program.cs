@@ -43,7 +43,11 @@ namespace Ticktage
             //driver = new ChromeDriver(serverPath);
             driver = new FirefoxDriver(serverPath, op);
             driver.Manage().Window.Maximize();
-            driver.Navigate().GoToUrl("https://support-cc.sdc.dz/");
+            driver.Navigate().GoToUrl("https://support-cc.sdc.dz/front/ticket.php");
+
+            driver.FindElement(By.XPath("//*[@id='login_name']")).SendKeys("elezaar.qaddour");
+            driver.FindElement(By.XPath("//*[@id='login_password']")).SendKeys("Sonelgaz.123");
+            driver.FindElement(By.XPath("//button[@type='submit']")).Click();
 
             var task1 = Task.Factory.StartNew(() =>
             {
@@ -57,18 +61,24 @@ namespace Ticktage
                         {
                             //
                             found = false;
-
-                            var array = driver.FindElements(By.XPath("//table[@class='tab_cadrehov']/tbody/tr"));
-
-                            foreach (var tr in array)
+                            var attribue = driver.FindElement(By.XPath("/html/body/div[2]/div/form[2]/div/table/tbody/tr[1]/td[4]")).Text;
+                            Console.WriteLine(attribue);
+                            if (attribue.Contains("Attribué"))//
                             {
-                                var iClass = tr.FindElement(By.XPath("./td[4]/i")).GetAttribute("title");
-                                if (iClass.Trim().Equals("Attribué"))
-                                {
-                                    found = true;
-                                    break;
-                                }
+                                found = true;
                             }
+
+                            //var array = driver.FindElements(By.XPath("//table[@class='tab_cadrehov']/tbody/tr"));
+
+                            //foreach (var tr in array)
+                            //{
+                            //    var iClass = tr.FindElement(By.XPath("./td[4]/i")).GetAttribute("title");
+                            //    if (iClass.Trim().Equals("Attribué"))
+                            //    {
+                            //        found = true;
+                            //        break;
+                            //    }
+                            //}
                             //
                         }
                         catch (WebDriverException e)
