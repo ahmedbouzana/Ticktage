@@ -18,99 +18,109 @@ namespace Ticktage
 
         static void Main(string[] args)
         {
-            Console.WriteLine("");
-            Console.WriteLine("** Ticktage/Scada Chlef V1.0 **");
-            Console.WriteLine("");
-
-            var serverPath = System.IO.Path.GetFullPath(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
             try
             {
-                player = new System.Media.SoundPlayer
+                Console.WriteLine("");
+                Console.WriteLine("** Ticktage/Scada Chlef V1.0 **");
+                Console.WriteLine("");
+
+                var serverPath = System.IO.Path.GetFullPath(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                try
                 {
-                    SoundLocation = serverPath + "/wav.wav"
+                    player = new System.Media.SoundPlayer
+                    {
+                        SoundLocation = serverPath + "/wav.wav"
+                    };
+
+                    player.LoadAsync();
+                }
+                catch
+                {
+                }
+                var op = new FirefoxOptions
+                {
+                    AcceptInsecureCertificates = true
                 };
 
-                player.LoadAsync();
-            }
-            catch
-            {
-            }
-            var op = new FirefoxOptions
-            {
-                AcceptInsecureCertificates = true
-            };
+                //driver = new ChromeDriver(serverPath);
+                driver = new FirefoxDriver(serverPath, op);
+                driver.Manage().Window.Maximize();
+                driver.Navigate().GoToUrl("https://support-cc.sdc.dz/front/ticket.php");
 
-            //driver = new ChromeDriver(serverPath);
-            driver = new FirefoxDriver(serverPath, op);
-            driver.Manage().Window.Maximize();
-            driver.Navigate().GoToUrl("https://support-cc.sdc.dz/front/ticket.php");
+                driver.FindElement(By.XPath("//*[@id='login_name']")).SendKeys("elezaar.qaddour");
+                driver.FindElement(By.XPath("//*[@id='login_password']")).SendKeys("Sonelgaz.123");
+                driver.FindElement(By.XPath("//button[@type='submit']")).Click();
 
-            driver.FindElement(By.XPath("//*[@id='login_name']")).SendKeys("elezaar.qaddour");
-            driver.FindElement(By.XPath("//*[@id='login_password']")).SendKeys("Sonelgaz.123");
-            driver.FindElement(By.XPath("//button[@type='submit']")).Click();
-
-            var task1 = Task.Factory.StartNew(() =>
-            {
-                var alarm = false;
-                bool found = false;
-                while (true)
+                var task1 = Task.Factory.StartNew(() =>
                 {
-                    try
+                    var alarm = false;
+                    bool found = false;
+                    while (true)
                     {
                         try
                         {
-                            //
-                            found = false;
-                            var attribue = driver.FindElement(By.XPath("/html/body/div[2]/div/form[2]/div/table/tbody/tr[1]/td[4]")).Text;
-                            Console.WriteLine(attribue);
-                            if (attribue.Contains("Attribué"))//
+                            try
                             {
-                                found = true;
+                                //
+                                found = false;
+                                var attribue = driver.FindElement(By.XPath("/html/body/div[2]/div/form[2]/div/table/tbody/tr[1]/td[4]")).Text;
+                                Console.WriteLine(attribue);
+                                if (attribue.Contains("Attribué"))//
+                                {
+                                    found = true;
+                                }
+
+                                //var array = driver.FindElements(By.XPath("//table[@class='tab_cadrehov']/tbody/tr"));
+
+                                //foreach (var tr in array)
+                                //{
+                                //    var iClass = tr.FindElement(By.XPath("./td[4]/i")).GetAttribute("title");
+                                //    if (iClass.Trim().Equals("Attribué"))
+                                //    {
+                                //        found = true;
+                                //        break;
+                                //    }
+                                //}
+                                //
+                            }
+                            catch (WebDriverException e)
+                            {
+                                found = false;
+                                alarm = false;
+                                //Environment.Exit(0);
                             }
 
-                            //var array = driver.FindElements(By.XPath("//table[@class='tab_cadrehov']/tbody/tr"));
-
-                            //foreach (var tr in array)
-                            //{
-                            //    var iClass = tr.FindElement(By.XPath("./td[4]/i")).GetAttribute("title");
-                            //    if (iClass.Trim().Equals("Attribué"))
-                            //    {
-                            //        found = true;
-                            //        break;
-                            //    }
-                            //}
-                            //
-                        }
-                        catch (WebDriverException e)
-                        {
-                            found = false;
-                            alarm = false;
-                            //Environment.Exit(0);
-                        }
-
-                        if (found)
-                        {
-                            if (!alarm)
+                            if (found)
                             {
-                                alarm = true;
-                                Task.Factory.StartNew(() => { while (alarm) player.PlaySync(); player.Stop(); });
+                                if (!alarm)
+                                {
+                                    alarm = true;
+                                    Task.Factory.StartNew(() => { while (alarm) player.PlaySync(); player.Stop(); });
+                                }
+                            }
+                            else
+                            {
+                                alarm = false;
                             }
                         }
-                        else
+                        catch
                         {
-                            alarm = false;
+
                         }
+
+                        Thread.Sleep(1000);
                     }
-                    catch
-                    {
+                });
 
-                    }
+                Task.WaitAll(new[] { task1 });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("*Erreur: " + ex.Message);
 
-                    Thread.Sleep(1000);
-                }
-            });
-
-            Task.WaitAll(new[] { task1 });
+                if (driver != null)
+                    driver.Close();
+            }
         }
     }
 }
